@@ -1,9 +1,9 @@
 import axios from "axios";
 import axiosClient from "./axiosClient";
 
-export const login = async ({ username, password }) => {
-  const baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
+export const login = async ({ username, password }) => {
   const form = new URLSearchParams();
   form.append("username", username);
   form.append("password", password);
@@ -14,6 +14,40 @@ export const login = async ({ username, password }) => {
     {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
+  );
+
+  return res.data;
+};
+
+/**
+ * Refresh access token using refresh token
+ */
+export const refreshToken = async (refreshToken) => {
+  const res = await axios.post(
+    `${baseURL}/api/v1/auth/refresh`,
+    { refresh_token: refreshToken },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  return res.data;
+};
+
+/**
+ * Logout
+ */
+export const logout = async (token) => {
+  const res = await axios.post(
+    `${baseURL}/api/v1/auth/logout`,
+    {},
+    {
+      headers: {
+        "Authorization": `Bearer ${token}`,
       },
     }
   );
@@ -68,13 +102,14 @@ export const authenticateWithPermissions = async ({ username, password }) => {
     // Login now returns user data with roles and permissions in the response
     const loginResponse = await login({ username, password });
     
-    // Handle the new response structure: { status, code, message, data: { access_token, token_type, user } }
+    // Handle the new response structure: { status, code, message, data: { access_token, refresh_token, token_type, user } }
     const responseData = loginResponse.data || loginResponse;
     const token = responseData.access_token;
+    const refreshToken = responseData.refresh_token;
     const user = responseData.user;
     
     // Set the token in axiosClient before making authenticated requests
-    axiosClient.setToken(token);
+    axiosClient.setToken(token, refreshToken);
     
     // Extract roles and permissions from the user object in login response
     let roles = [];
@@ -123,6 +158,7 @@ export const authenticateWithPermissions = async ({ username, password }) => {
     const result = {
       user: user,
       token: token,
+      refreshToken: refreshToken,
       roles,
       permissions
     };
@@ -167,3 +203,11 @@ export const checkPermission = async (permission) => {
     return false;
   }
 };
+
+/**
+ * Default permissions mapping (keep existing function)
+ */
+function getDefaultPermissionsForRoles(roles) {
+  // Return empty array - actual permissions come from server
+  return [];
+}

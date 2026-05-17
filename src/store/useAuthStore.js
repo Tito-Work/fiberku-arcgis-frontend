@@ -6,18 +6,23 @@ export const useAuthStore = create(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       roles: [],
       permissions: [],
 
-      setAuth: (user, token, roles = [], permissions = []) => 
-        set({ user, token, roles, permissions }),
+      setAuth: (user, token, refreshToken = null, roles = [], permissions = []) => 
+        set({ user, token, refreshToken, roles, permissions }),
+
+      setTokens: (token, refreshToken) => 
+        set({ token, refreshToken }),
 
       setRolesAndPermissions: (roles, permissions) => 
         set({ roles, permissions }),
 
       logout: () => set({ 
         user: null, 
-        token: null, 
+        token: null,
+        refreshToken: null,
         roles: [], 
         permissions: [] 
       }),
@@ -76,10 +81,23 @@ export const useAuthStore = create(
           roles,
           displayName: user?.full_name || user?.username || user?.email || 'Unknown User'
         };
+      },
+
+      // Check if user is authenticated
+      isAuthenticated: () => {
+        const { token, refreshToken } = get();
+        return !!token && !!refreshToken;
       }
     }),
     {
       name: "auth-storage",
+      partialize: (state) => ({ 
+        user: state.user, 
+        token: state.token,
+        refreshToken: state.refreshToken,
+        roles: state.roles, 
+        permissions: state.permissions 
+      }),
     }
   )
 );

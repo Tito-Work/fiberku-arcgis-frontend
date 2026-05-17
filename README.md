@@ -19,9 +19,11 @@ Key capabilities include:
 
 ### Authentication & User Management
 - Login with JWT authentication and session management
+- **Refresh Token Mechanism** with automatic token renewal (access: 30 min, refresh: 7 days)
 - User management: create, edit, delete, activate, deactivate
 - Role assignment to users
 - Protected routes for authenticated pages
+- Auto-refresh on 401 errors (seamless user experience)
 
 ### Role Management
 - List roles with their permissions
@@ -164,7 +166,9 @@ src/
 This frontend expects the backend API at `VITE_API_URL` to support:
 
 ### Authentication
-- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/login` - User login (returns access_token + refresh_token)
+- `POST /api/v1/auth/refresh` - Refresh access token using refresh token
+- `POST /api/v1/auth/logout` - User logout
 - `POST /api/v1/auth/check-permission` - Permission verification
 
 ### User Management

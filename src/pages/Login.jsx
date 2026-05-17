@@ -23,8 +23,8 @@ export default function Login() {
       try {
         const authData = await authenticateWithPermissions({ username, password });
         
-        // Set user authentication data
-        setAuth(authData.user, authData.token, authData.roles, authData.permissions);
+        // Set user authentication data (includes refresh token)
+        setAuth(authData.user, authData.token, authData.refreshToken, authData.roles, authData.permissions);
         
         navigate("/map");
       } catch (rbacError) {

@@ -1,10 +1,14 @@
 import axios from "axios";
 import { useAuthStore } from "../store/useAuthStore";
 
+const baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
 const getToken = () => useAuthStore.getState().token;
+const getRefreshToken = () => useAuthStore.getState().refreshToken;
+
 class AxiosClient {
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+    this.baseURL = baseURL;
     this.token = getToken();
 
     this.axios = axios.create({
@@ -30,15 +34,56 @@ class AxiosClient {
       return config;
     });
 
-    // RESPONSE
+    // RESPONSE with token refresh
     this.axios.interceptors.response.use(
       (res) => res,
-      (err) => {
+      async (err) => {
+        const originalRequest = err.config;
         const status = err.response?.status;
 
-        if (status === 401) {
-          this.clearToken();
-          // window.location.href = "/login";
+        // If 401 and not already retried, try to refresh token
+        if (status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          const refreshToken = getRefreshToken();
+          
+          if (refreshToken) {
+            try {
+              // Call refresh endpoint
+              const res = await axios.post(
+                `${this.baseURL}/api/v1/auth/refresh`,
+                { refresh_token: refreshToken },
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+              
+              const responseData = res.data?.data || res.data;
+              const newAccessToken = responseData.access_token;
+              const newRefreshToken = responseData.refresh_token;
+              
+              // Update tokens in store
+              useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+              
+              // Update the failed request with new token
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+              
+              // Retry the original request
+              return this.axios(originalRequest);
+            } catch (refreshError) {
+              // Refresh failed - logout user
+              console.error("Token refresh failed:", refreshError);
+              useAuthStore.getState().logout();
+              window.location.href = "/login";
+              return Promise.reject(refreshError);
+            }
+          } else {
+            // No refresh token - logout
+            useAuthStore.getState().logout();
+            window.location.href = "/login";
+          }
         }
 
         return Promise.reject(err);
@@ -78,14 +123,18 @@ class AxiosClient {
   // ======================
   // AUTH
   // ======================
-  setToken(token) {
+  setToken(token, refreshToken = null) {
     this.token = token;
     localStorage.setItem("access_token", token);
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+    }
   }
 
   clearToken() {
     this.token = null;
     localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
   }
 
   // ======================
