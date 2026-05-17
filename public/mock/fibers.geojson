@@ -1,0 +1,30 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "segment": "FO-SEG-01",
+        "operator": "FiberNet"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            106.82,
+            -6.17
+          ],
+          [
+            106.83,
+            -6.18
+          ],
+          [
+            106.84,
+            -6.185
+          ]
+        ]
+      }
+    }
+  ]
+}

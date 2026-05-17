@@ -1,0 +1,13 @@
+services:
+  react-app:
+    build:
+      context: .
+      args:
+        VITE_ARCGIS_API_KEY: ${VITE_ARCGIS_API_KEY}
+        VITE_API_URL: ${VITE_API_URL}
+
+    container_name: arcgis_frontend
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:3000:80"
